@@ -156,6 +156,7 @@ class ReportScheduler:
             "error": error,
             "next_run_at": nxt.isoformat() if nxt else None,
             "deliveries": dispatch_summary,
+            "data": {"columns": columns, "rows": rows} if status == "success" else None,
         }
 
     async def _dispatch(

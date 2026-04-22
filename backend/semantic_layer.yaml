@@ -1,0 +1,64 @@
+meta:
+  domain: ride_hailing
+  language: ru
+
+tables:
+  orders:
+    description: "Логи тендеров (предложений поездок). Один заказ (order_id) может состоять из нескольких тендеров (строк)."
+    columns:
+      city_id: int
+      order_id: varchar
+      tender_id: varchar
+      user_id: varchar
+      driver_id: varchar
+      status_order: "done | cancel"
+      status_tender: "done | decline | cancel"
+      order_timestamp: timestamp
+      distance_in_meters: decimal
+      duration_in_seconds: decimal
+      price_order_local: decimal
+
+metrics:
+  orders_total:
+    canonical: "заказы"
+    synonyms: ["всего заказов", "попытки уехать", "уникальные заказы"]
+    sql: "COUNT(DISTINCT order_id)"
+
+  completed_rides:
+    canonical: "завершённые поездки"
+    synonyms: ["успешные заказы", "выполненные"]
+    sql: "COUNT(DISTINCT CASE WHEN status_order = 'done' THEN order_id END)"
+
+  cancellations:
+    canonical: "отмены"
+    synonyms: ["отменённые заказы"]
+    sql: "COUNT(DISTINCT CASE WHEN status_order = 'cancel' THEN order_id END)"
+
+  revenue:
+    canonical: "выручка"
+    synonyms: ["доход", "сумма", "оборот"]
+    # КРИТИЧНО: суммируем только успешные тендеры!
+    sql: "SUM(CASE WHEN status_tender = 'done' THEN price_order_local ELSE 0 END)"
+
+  avg_distance:
+    canonical: "средняя дистанция"
+    sql: "AVG(CASE WHEN status_tender = 'done' THEN distance_in_meters END)"
+
+  avg_duration_min:
+    canonical: "средняя длительность (мин)"
+    sql: "AVG(CASE WHEN status_tender = 'done' THEN duration_in_seconds END) / 60.0"
+
+dimensions:
+  city:
+    canonical: "город"
+    column: "city_id"
+  date:
+    canonical: "дата"
+    column: "DATE(order_timestamp)"
+  hour:
+    canonical: "час"
+    column: "CAST(strftime('%H', order_timestamp) AS INTEGER)"
+
+rules:
+  default_limit: 1000
+  allowed_tables: [orders]

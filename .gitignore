@@ -5,5 +5,5 @@ __pycache__/
 venv/
 .env
 .env.local
- backend/train.csv
+backend/train.csv
 backend/data/
